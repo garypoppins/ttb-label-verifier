@@ -1,14 +1,15 @@
-filename,brand_name,class_type,alcohol_content,net_contents,beverage_type
-label_correct.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_wrong_abv.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_titlecase_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_reworded_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_missing_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_warning_not_bold.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_brand_case.png,Stone's Throw,Straight Rye Whiskey,"50% Alc./Vol. (100 Proof)",750 mL,spirits
-label_rotated.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_tilted.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_low_contrast.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
-label_wine.png,Chateau Meridian,Napa Valley Cabernet Sauvignon,13.5% Alc. by Vol.,750 mL,wine
-label_beer.png,Hop Harbor,India Pale Ale,6.2% Alc./Vol.,355 mL,beer
-label_front.png;label_back.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits
+filename,brand_name,class_type,alcohol_content,net_contents,beverage_type,bottler_name_address,country_of_origin
+label_correct.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,"Old Tom Distillery, Bardstown, Kentucky",
+label_wrong_abv.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_titlecase_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_reworded_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_missing_warning.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_warning_not_bold.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_brand_case.png,Stone's Throw,Straight Rye Whiskey,50% Alc./Vol. (100 Proof),750 mL,spirits,,
+label_rotated.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_tilted.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_low_contrast.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,,
+label_wine.png,Chateau Meridian,Napa Valley Cabernet Sauvignon,13.5% Alc. by Vol.,750 mL,wine,,
+label_beer.png,Hop Harbor,India Pale Ale,6.2% Alc./Vol.,355 mL,beer,,
+label_front.png;label_back.png,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,45% Alc./Vol. (90 Proof),750 mL,spirits,"Old Tom Distillery, Bardstown, Kentucky",
+label_import.png,Casa Solana,Tequila Blanco,40% Alc./Vol. (80 Proof),750 mL,spirits,"Solana Spirits, San Antonio, Texas",Mexico

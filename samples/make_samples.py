@@ -196,6 +196,19 @@ BEER = Label(
 )
 
 
+IMPORT = Label(
+    brand_lines=("CASA SOLANA",),
+    class_type="Tequila Blanco",
+    alcohol="40% Alc./Vol. (80 Proof)",
+    net_contents="750 mL",
+    bottler="Imported by Solana Spirits, San Antonio, Texas",
+    tagline="PRODUCT OF MEXICO",
+    paper=(240, 246, 244),
+    ink=(20, 44, 52),
+    accent=(18, 112, 104),
+)
+
+
 def build_all() -> dict[str, Image.Image]:
     """Return every sample image keyed by file name."""
     correct = render(OLD_TOM)
@@ -215,6 +228,8 @@ def build_all() -> dict[str, Image.Image]:
         # A front and back pair for one product, to be checked together.
         "label_front.png": render(replace(OLD_TOM, warning_header=None)),
         "label_back.png": render_back(OLD_TOM),
+        # An imported product: country of origin and importer.
+        "label_import.png": render(IMPORT),
     }
 
 

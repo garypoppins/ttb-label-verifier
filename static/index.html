@@ -80,6 +80,20 @@
             </div>
           </div>
           <p class="hint">The government warning is always checked. You do not need to type it.</p>
+
+          <fieldset class="optional-group">
+            <legend>Optional <span class="optional">(leave empty to skip)</span></legend>
+            <div class="field">
+              <label for="bottler_name_address">Bottler or producer, with city and state</label>
+              <p class="hint" id="bottler-hint">Example: Old Tom Distillery, Bardstown, Kentucky. You do not need to type "Bottled by" or "Imported by".</p>
+              <input type="text" id="bottler_name_address" name="bottler_name_address" autocomplete="off" aria-describedby="bottler-hint">
+            </div>
+            <div class="field">
+              <label for="country_of_origin">Country of origin (imports)</label>
+              <p class="hint" id="country-hint">Example: Mexico. The label may say "Product of Mexico" or "Made in Mexico".</p>
+              <input type="text" id="country_of_origin" name="country_of_origin" autocomplete="off" aria-describedby="country-hint">
+            </div>
+          </fieldset>
         </div>
 
         <div class="message message-error" id="single-error" role="alert" hidden></div>
@@ -114,7 +128,7 @@
           <div class="drop-zone" id="batch-csv-drop">
             <input type="file" id="batch-csv" accept=".csv,text/csv" class="visually-hidden">
             <label for="batch-csv" class="button button-secondary">Choose the list (CSV)</label>
-            <p class="hint">Columns: filename, brand_name, class_type, alcohol_content, net_contents, beverage_type (optional).</p>
+            <p class="hint">Columns: filename, brand_name, class_type, alcohol_content, net_contents, and optional beverage_type, bottler_name_address, country_of_origin.</p>
             <p class="hint">If one label has several pictures, put them all in the filename column with a semicolon between them, like front.jpg;back.jpg.</p>
             <p class="file-name" id="batch-csv-name" aria-live="polite"></p>
           </div>

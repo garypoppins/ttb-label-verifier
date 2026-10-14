@@ -3,7 +3,8 @@
 A prototype web app that checks an alcohol beverage label image against the
 values on its label application. It reads the label with OCR that runs on the
 server itself, then compares brand name, class/type, alcohol content, net
-contents and the government health warning. Each item comes back as Match,
+contents and the government health warning, and, when they are filled in, the
+bottler or producer and the country of origin. Each item comes back as Match,
 Needs review or Does not match, with a one-line reason.
 
 It was built for the Treasury (TTB) take-home exercise. Design choices,
@@ -71,16 +72,35 @@ from the label, with the reason for each result and the time taken.
   a warning or a brand that is on none of them is a mismatch, provided every
   picture read well.
 
+**Optional items.** Under step 2 there is an "Optional" group with two more
+fields. Leave them empty and they are not checked and do not appear in the
+results.
+
+- **Bottler or producer, with city and state**, for example
+  `Old Tom Distillery, Bardstown, Kentucky`. You do not need to type "Bottled
+  by", "Distilled and bottled by" or "Imported by". The name is compared like
+  the brand name; the address counts as found when its parts (city, state) are
+  on the label, and a two-letter state such as `KY` also matches "Kentucky".
+  Name and address found is a match; only one of them is Needs review.
+- **Country of origin**, for example `Mexico`. The label must state it, as in
+  "Product of Mexico", "Made in Mexico", "Imported from Mexico", "Produce of
+  Mexico" or "Hecho en México". Common variants count as the same country (USA,
+  U.S.A., United States; UK, United Kingdom; Scotland is part of the United
+  Kingdom). A label that clearly states a different country is a mismatch. The
+  country named without such a statement, or not found, is Needs review.
+
 **Check many labels.** Choose all the pictures, then choose one CSV file with a
 row per label. The page shows progress, a results table (problems first) with
 details on request, and a "Download results (CSV)" button. A blank CSV can be
 downloaded from the page. Columns:
 
 ```
-filename,brand_name,class_type,alcohol_content,net_contents,beverage_type
+filename,brand_name,class_type,alcohol_content,net_contents,beverage_type,bottler_name_address,country_of_origin
 ```
 
-`beverage_type` is optional (spirits, wine or beer; default spirits). If one
+`beverage_type` is optional (spirits, wine or beer; default spirits).
+`bottler_name_address` and `country_of_origin` are optional too: the columns can
+be left out of the file, or left empty on any row. If one
 label has several pictures, put them all in the `filename` column with a
 semicolon between them:
 
@@ -89,7 +109,8 @@ front_0002.jpg;back_0002.jpg,CHATEAU MERIDIAN,Napa Valley Cabernet Sauvignon,13.
 ```
 
 To try it with the bundled samples, choose every image in `samples/` and then
-`samples/batch.csv`. The last row of that list is a front and back pair.
+`samples/batch.csv`. One row of that list is a front and back pair, and the
+last row is an imported tequila with a bottler and a country of origin.
 Expected results are listed in [samples/README.md](samples/README.md).
 
 ## Running the tests
@@ -173,6 +194,8 @@ Multipart form.
 | `alcohol_content` | spirits only | For example `45% Alc./Vol. (90 Proof)` or `45%`. If left empty for wine or beer, the item is skipped. |
 | `net_contents` | yes | Amount with unit, for example `750 mL` |
 | `beverage_type` | no | `spirits` (default), `wine` or `beer` |
+| `bottler_name_address` | no | For example `Old Tom Distillery, Bardstown, Kentucky`. Checked only when filled in. |
+| `country_of_origin` | no | For example `Mexico`. Checked only when filled in. |
 
 Example:
 
@@ -242,7 +265,10 @@ Response (shortened):
 ```
 
 `status` and `overall` are one of `match`, `review` or `mismatch`. `overall` is
-the worst of the field statuses. Each field has `picture` (1 for the first
+the worst of the field statuses. The optional `bottler_name_address` and
+`country_of_origin` items appear in `fields` only when a value was sent; when
+empty they are left out entirely (not listed in `skipped`, which is for a
+required item left empty, such as alcohol content for wine). Each field has `picture` (1 for the first
 picture sent) and `picture_name`, saying where the value was found, or `null`
 and an empty name when it was not found on any picture. `pictures` has one
 entry per picture with the text read from it. `ocr` is the same information
@@ -331,6 +357,22 @@ Front and back together (9 products). This mode did not exist before.
 - 34 photos is a small sample and I chose them. Treat the percentages as a
   guide, not as a measurement of field accuracy.
 
+**The two optional items on real photos.** I added these after the run above
+and checked them on the photos where they are printed, one picture at a time:
+
+| | Match | Needs review | Does not match |
+|---|---|---|---|
+| Bottler or producer, clearly legible (10 photos) | 4 | 6 | 0 |
+| Bottler or producer, hard to read (4 photos) | 0 | 4 | 0 |
+| Country of origin, clearly legible (10 photos) | 4 | 6 | 0 |
+| Country of origin, hard to read (1 photo) | 1 | 0 | 0 |
+| Wrong country typed in (6 photos) | 0 | 3 | 3 |
+
+No wrong country passed. The reviews are mostly the same OCR problem as above:
+the importer line was not read ("Imported by Crown Imports, Chicago, IL" on the
+Corona and Modelo back labels), or the statement was misread ("MADE IN MEXICO"
+read as "WADEINMEXICO", which still finds "Mexico" and asks for a look).
+
 ## Repository layout
 
 ```
@@ -338,8 +380,9 @@ app/main.py        API routes, input validation, static hosting
 app/ocr.py         image loading, orientation, OCR
 app/checks.py      brand, class/type, alcohol content and net contents checks
 app/warning.py     government warning text and its wording, capitals and bold checks
+app/producer.py    optional bottler/producer and country of origin checks
 static/            index.html, style.css, app.js (no build step, no outside resources)
-samples/           generated test labels (including a front and back pair), batch.csv, make_samples.py
+samples/           generated test labels (including a front and back pair and an import), batch.csv, make_samples.py
 tests/             unit tests and end-to-end tests; test_real_photo_fixes.py covers the real-photo failures
 Dockerfile, requirements.txt, requirements-dev.txt, APPROACH.md
 ```

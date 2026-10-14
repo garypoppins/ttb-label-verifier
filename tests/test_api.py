@@ -19,8 +19,12 @@ TIME_LIMIT_SECONDS = 5.0
 FIELDS = ("brand_name", "class_type", "alcohol_content", "net_contents", "government_warning")
 
 ALL_MATCH = dict.fromkeys(FIELDS, "match")
+# Rows of samples/batch.csv that also fill in the optional bottler (and country) fields.
+WITH_BOTTLER = {**ALL_MATCH, "bottler_name_address": "match"}
+WITH_BOTTLER_AND_COUNTRY = {**WITH_BOTTLER, "country_of_origin": "match"}
 EXPECTED = {
-    "label_correct.png": ALL_MATCH,
+    "label_correct.png": WITH_BOTTLER,
+    "label_import.png": WITH_BOTTLER_AND_COUNTRY,
     "label_wrong_abv.png": {**ALL_MATCH, "alcohol_content": "mismatch"},
     "label_titlecase_warning.png": {**ALL_MATCH, "government_warning": "mismatch"},
     "label_reworded_warning.png": {**ALL_MATCH, "government_warning": "mismatch"},
@@ -68,6 +72,7 @@ def test_batch_list_covers_every_sample_image(applications: dict[str, dict[str, 
     listed = {name for row in applications for name in row.split(";")}
     assert images == listed
     assert set(EXPECTED) | {"label_low_contrast.jpg", "label_front.png", "label_back.png"} == images
+    assert "label_import.png" in images
 
 
 @pytest.mark.parametrize("filename", EXPECTED)
@@ -112,7 +117,7 @@ def test_label_turned_on_its_side_or_upside_down(
 ) -> None:
     with Image.open(SAMPLES / "label_correct.png") as image:
         body = post_image(client, image.transpose(turn), applications["label_correct.png"])
-    assert statuses(body) == ALL_MATCH
+    assert statuses(body) == WITH_BOTTLER
 
 
 @pytest.mark.parametrize("upside_down", [False, True])
@@ -224,7 +229,10 @@ def test_batch_template_download(client: TestClient) -> None:
     assert response.status_code == 200
     assert "attachment" in response.headers["content-disposition"]
     header = next(csv.reader(io.StringIO(response.text)))
-    assert header == ["filename", "brand_name", "class_type", "alcohol_content", "net_contents", "beverage_type"]
+    assert header == [
+        "filename", "brand_name", "class_type", "alcohol_content", "net_contents", "beverage_type",
+        "bottler_name_address", "country_of_origin",
+    ]
 
 
 def test_front_end_is_served_without_outside_resources(client: TestClient) -> None:
@@ -257,7 +265,7 @@ def test_front_and_back_together_match(client: TestClient, applications: dict[st
     elapsed = time.perf_counter() - started
     assert response.status_code == 200, response.text
     body = response.json()
-    assert statuses(body) == ALL_MATCH
+    assert statuses(body) == WITH_BOTTLER
     assert body["overall"] == "match"
     checks = by_field(body)
     assert checks["brand_name"]["picture"] == 1 and checks["brand_name"]["picture_name"] == "label_front.png"
@@ -380,3 +388,71 @@ def test_page_lets_the_user_add_and_take_pictures(client: TestClient) -> None:
     assert "multiple" in page.split('id="single-image"')[1].split(">")[0]
     for needed in ("openCamera", "snapPicture", "useCapturedFile", "addPictures", "removePicture"):
         assert needed in script
+
+
+# ---------- Optional fields: bottler or producer, country of origin ----------
+
+
+def test_optional_fields_left_empty_are_not_checked(client: TestClient, applications: dict[str, dict[str, str]]) -> None:
+    form = {**applications["label_correct.png"], "bottler_name_address": "", "country_of_origin": ""}
+    body = post(client, "label_correct.png", form)
+    assert set(statuses(body)) == set(FIELDS)
+    assert body["skipped"] == []
+    assert body["overall"] == "match"
+
+
+def test_old_clients_that_do_not_send_the_optional_fields_still_work(client: TestClient) -> None:
+    form = {"brand_name": "OLD TOM DISTILLERY", "class_type": "Kentucky Straight Bourbon Whiskey",
+            "alcohol_content": "45% Alc./Vol. (90 Proof)", "net_contents": "750 mL"}
+    body = post(client, "label_correct.png", form)
+    assert statuses(body) == ALL_MATCH
+
+
+def test_import_label_bottler_and_country(client: TestClient, applications: dict[str, dict[str, str]]) -> None:
+    checks = by_field(post(client, "label_import.png", applications["label_import.png"]))
+    assert checks["country_of_origin"]["found"] == "PRODUCT OF MEXICO"
+    assert "Texas" in checks["bottler_name_address"]["found"] or "TEXAS" in checks["bottler_name_address"]["found"].upper()
+
+
+def test_wrong_country_is_a_mismatch(client: TestClient, applications: dict[str, dict[str, str]]) -> None:
+    form = {**applications["label_import.png"], "country_of_origin": "Italy"}
+    country = by_field(post(client, "label_import.png", form))["country_of_origin"]
+    assert country["status"] == "mismatch"
+    assert "Mexico" in country["reason"]
+
+
+def test_country_on_a_label_that_has_none_asks_for_the_other_side(
+    client: TestClient, applications: dict[str, dict[str, str]]
+) -> None:
+    form = {**applications["label_correct.png"], "country_of_origin": "Mexico"}
+    country = by_field(post(client, "label_correct.png", form))["country_of_origin"]
+    assert country["status"] == "review"
+    assert "other side" in country["reason"]
+
+
+def test_wrong_bottler_city_needs_review(client: TestClient, applications: dict[str, dict[str, str]]) -> None:
+    form = {**applications["label_correct.png"], "bottler_name_address": "Old Tom Distillery, Louisville, Kentucky"}
+    bottler = by_field(post(client, "label_correct.png", form))["bottler_name_address"]
+    assert bottler["status"] == "review"
+    assert "Louisville" in bottler["reason"]
+
+
+def test_bottler_and_country_across_two_pictures(client: TestClient, applications: dict[str, dict[str, str]]) -> None:
+    """The back label says "PRODUCT OF USA"; the front says nothing about the country."""
+    form = {**applications[PAIR], "country_of_origin": "U.S.A."}
+    checks = by_field(post_many(client, PAIR.split(";"), form).json())
+    assert checks["bottler_name_address"]["status"] == "match"
+    assert checks["bottler_name_address"]["picture"] in (1, 2)
+    assert checks["country_of_origin"]["status"] == "match"
+    assert checks["country_of_origin"]["picture"] == 2
+    form["country_of_origin"] = "Mexico"
+    wrong = by_field(post_many(client, PAIR.split(";"), form).json())["country_of_origin"]
+    assert wrong["status"] == "mismatch"
+    assert wrong["picture"] == 2
+
+
+def test_page_has_the_optional_fields(client: TestClient) -> None:
+    page = client.get("/").text
+    for needed in ('id="bottler_name_address"', 'id="country_of_origin"', "Optional"):
+        assert needed in page
+    assert "required" not in page.split('id="bottler_name_address"')[1].split(">")[0]

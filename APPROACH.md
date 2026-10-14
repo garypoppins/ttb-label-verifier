@@ -8,6 +8,7 @@ and where the prototype falls short.
 | Requirement | Source in the interview notes | How the prototype meets it |
 |---|---|---|
 | Check that the label matches the application: brand name, class/type, alcohol content, net contents, government warning | Sarah Chen ("Brand name matches? ABV is correct? Warning is there?"); sample label fields in the instructions | The label is read with OCR, then one check runs per item. Each returns Match, Needs review or Does not match, the two values side by side, and a one-line reason. |
+| Name and address of the bottler or producer; country of origin for imports | Listed in the instructions among the common label elements | Covered as two optional fields, checked only when filled in (see Assumptions for why optional). The bottler name is compared like the brand and the address by its city and state; the country must appear in a statement such as "Product of Mexico". |
 | Results in about 5 seconds, or nobody will use it | Sarah Chen, on the failed scanning vendor pilot | OCR runs on the server with the models loaded once at start. Large images are scaled down first. Measured time per sample label is 0.5 to 1.6 seconds on the development machine, and about 2 seconds for a phone photo of a real bottle. The time is shown on screen. Tests fail if a label takes 5 seconds. Two real photos checked together took 4.5 seconds at the median and went over 5 seconds for 3 of 9 products (see "Tested on real photos"). |
 | Something a 73-year-old who is not technical could use; no hunting for buttons | Sarah Chen; Dave Morrison ("don't make my life harder") | One page. Two large buttons choose the mode. Numbered steps. Large type, high contrast, plain words. Results are coloured and also labelled in words with a symbol, so colour is not the only signal. |
 | Batches of 200 to 300 labels at once | Sarah Chen, Janet in Seattle | "Check many labels": choose all the pictures and one CSV list. A progress bar counts labels as they finish. The results table puts problems first, shows details on request, and downloads as CSV. |
@@ -85,6 +86,23 @@ routine matches quickly, not to make the decision.
      still a mismatch.
   2. *Capital letters.* The heading as read must be all capitals.
   3. *Bold.* See the next section.
+- **Bottler or producer (optional).** Words such as "Bottled by", "Distilled
+  and bottled by" or "Imported by" are dropped from the application value. The
+  text before the first comma is the name and is compared like the brand name.
+  The rest are address parts (city, state, country); each counts as found if it
+  is on the label as a word, and a two-letter US state code also matches the
+  state's full name. Name and every address part found is a Match. Only some of
+  it is Needs review. Nothing found follows the same rules as the brand.
+- **Country of origin (optional).** The label is searched for an origin
+  statement: "Product of", "Produce of", "Made in", "Imported ... from",
+  "Produced in", "Bottled in", "Hecho en", "Produit de" and a few others,
+  followed by a country. Spellings are matched against a list of about 70
+  countries with common variants (USA, U.S.A., United States, America; UK,
+  United Kingdom, Great Britain; México). Scotland, England, Wales and Northern
+  Ireland count as the United Kingdom. A statement naming the application's
+  country is a Match. A statement naming another country is a mismatch on a
+  clean read. The country named on its own without a statement, or not found,
+  is Needs review.
 - **Poor reads.** If the text was read with low confidence, or fewer than about
   40 letters were read in all, "not found" results become Needs review with a
   request for a clearer photo. Three fragments read confidently say nothing
@@ -234,6 +252,14 @@ What I take from this:
   a real cost.
 - 34 photos chosen by me is a small sample. The numbers are a guide.
 
+The two optional items were added afterwards and checked on the photos where
+they are printed. Bottler or producer: 4 match, 6 review, 0 mismatch on 10
+clearly legible photos, and 4 review on 4 hard ones. Country of origin: 4 match,
+6 review, 0 mismatch on 10 clearly legible photos, and 1 match on 1 hard one.
+With a wrong country typed in (6 photos): 3 mismatch, 3 review, none passed. The
+reviews come from the same OCR misses (importer lines not read) and misreads
+("WADEINMEXICO").
+
 Every one of these failures has a unit test in `tests/test_real_photo_fixes.py`
 that names the photo it came from. The photos are third-party images and are
 not in the repository.
@@ -258,8 +284,16 @@ not in the repository.
 - **The warning text itself** was confirmed against the eCFR text of 27 CFR
   16.21 on the day of writing. A test holds a second copy to catch accidental
   edits.
-- Not checked at all: name and address of the bottler, country of origin, type
-  size and legibility rules, placement of the warning "separate and apart".
+- **Bottler and country of origin are optional.** Not every review needs them,
+  the form already asks for five values, and the exact wording rules differ by
+  product (a domestic spirit needs no country statement; an import names the
+  importer, not the distiller). So they are checked only when the agent fills
+  them in. A different country clearly stated is a mismatch; a country not found
+  is only Needs review, even with several pictures, because origin statements
+  are small print and often missed by the OCR.
+- Not checked at all: type size and legibility rules, placement of the warning
+  "separate and apart", whether the bottler wording ("Bottled by" against
+  "Imported by") is the right one for the product.
 
 ## Trade-offs
 
@@ -363,7 +397,7 @@ not in the repository.
    holds real photos back is the small OCR model skipping lines. A larger
    detection model, tried as a fallback when the small one leaves an item
    unconfirmed, is the first thing I would measure on the real-photo set.
-5. **More of the checklist**: bottler name and address, country of origin, type
+5. **More of the checklist**: type
    size of the warning, wine and beer specific items.
 6. **Better handling of hard photos**: perspective correction for curved
    bottles, glare detection, and reading pictures of one application in

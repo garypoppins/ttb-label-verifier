@@ -27,6 +27,7 @@ from app.checks import (
     combine_pictures,
     overall_status,
 )
+from app.producer import check_bottler, check_country
 from app.warning import check_warning
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -58,12 +59,18 @@ FIELD_LABELS = {
     "class_type": "Class/type",
     "alcohol_content": "Alcohol content",
     "net_contents": "Net contents",
+    "bottler_name_address": "Bottler or producer",
+    "country_of_origin": "Country of origin",
 }
+# Optional for every beverage type: checked only when the application value is filled in.
+OPTIONAL_FIELDS = ("bottler_name_address", "country_of_origin")
 BATCH_TEMPLATE = (
-    "filename,brand_name,class_type,alcohol_content,net_contents,beverage_type\r\n"
-    'label_0001.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits\r\n'
+    "filename,brand_name,class_type,alcohol_content,net_contents,beverage_type,bottler_name_address,country_of_origin\r\n"
+    'label_0001.jpg,OLD TOM DISTILLERY,Kentucky Straight Bourbon Whiskey,"45% Alc./Vol. (90 Proof)",750 mL,spirits,'
+    '"Old Tom Distillery, Bardstown, Kentucky",\r\n'
     "label_0002_front.jpg;label_0002_back.jpg,CHATEAU MERIDIAN,Napa Valley Cabernet Sauvignon,"
-    "13.5% Alc. by Vol.,750 mL,wine\r\n"
+    "13.5% Alc. by Vol.,750 mL,wine,,\r\n"
+    'label_0003.jpg,CASA SOLANA,Tequila Blanco,40% Alc./Vol.,750 mL,spirits,"Solana Spirits, San Antonio, Texas",Mexico\r\n'
 )
 
 
@@ -129,6 +136,14 @@ def _field_checks(values: dict[str, str], single: bool) -> dict[str, Callable[[o
         values["net_contents"], read.texts, read.readable, other_side_possible=single
     )
     checks["government_warning"] = lambda read: check_warning(read, other_side_possible=single)
+    if values["bottler_name_address"]:
+        checks["bottler_name_address"] = lambda read: check_bottler(
+            values["bottler_name_address"], read.texts, read.readable, other_side_possible=single
+        )
+    if values["country_of_origin"]:
+        checks["country_of_origin"] = lambda read: check_country(
+            values["country_of_origin"], read.texts, read.readable, other_side_possible=single
+        )
     return checks
 
 
@@ -168,6 +183,8 @@ def verify(
     alcohol_content: str = Form(""),
     net_contents: str = Form(""),
     beverage_type: str = Form("spirits"),
+    bottler_name_address: str = Form(""),
+    country_of_origin: str = Form(""),
 ) -> dict:
     """Read one or more pictures of the same product and compare them with the application values.
 
@@ -197,6 +214,8 @@ def verify(
         "class_type": class_type.strip(),
         "alcohol_content": alcohol_content.strip(),
         "net_contents": net_contents.strip(),
+        "bottler_name_address": bottler_name_address.strip(),
+        "country_of_origin": country_of_origin.strip(),
     }
     missing = [FIELD_LABELS[name] for name in REQUIRED_FIELDS[beverage_type] if not values[name]]
     if missing:
@@ -259,7 +278,9 @@ def verify(
         "beverage_type": beverage_type,
         "overall": overall_status(results),
         "fields": [result.to_dict() for result in results],
-        "skipped": [FIELD_LABELS[name] for name in values if not values[name]],
+        # Required items left empty (alcohol content for wine and beer). The optional items are
+        # simply left out when empty: they are not part of every label review.
+        "skipped": [FIELD_LABELS[name] for name in values if not values[name] and name not in OPTIONAL_FIELDS],
         "elapsed_ms": round((time.perf_counter() - started) * 1000),
         "pictures": [
             {

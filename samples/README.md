@@ -5,9 +5,14 @@ products, not real labels. `batch.csv` holds the application values for each
 one, so the whole folder can be used with "Check many labels": choose all the
 images, then choose `batch.csv`.
 
-The last row of `batch.csv` shows how to give one label several pictures: the
+One row of `batch.csv` shows how to give one label several pictures: the
 `filename` column lists them with a semicolon between,
 `label_front.png;label_back.png`. Both pictures are checked as one application.
+
+`batch.csv` also has the two optional columns, `bottler_name_address` and
+`country_of_origin`. They are filled in for `label_correct.png`, the front and
+back pair (bottler only) and `label_import.png` (both), and empty elsewhere, so
+those other rows check the five usual items only.
 
 To regenerate the images (fonts differ between operating systems, so the pixels
 will differ slightly from the committed files, which were made on Windows):
@@ -19,7 +24,9 @@ python samples/make_samples.py
 ## Expected results
 
 Application values for the Old Tom labels are: OLD TOM DISTILLERY, Kentucky
-Straight Bourbon Whiskey, 45% Alc./Vol. (90 Proof), 750 mL.
+Straight Bourbon Whiskey, 45% Alc./Vol. (90 Proof), 750 mL, and where given,
+bottler "Old Tom Distillery, Bardstown, Kentucky". The Old Tom labels print
+"Distilled and Bottled by Old Tom Distillery, Bardstown, Kentucky".
 
 | File | What is different about it | Expected overall | Expected detail |
 |---|---|---|---|
@@ -38,6 +45,7 @@ Straight Bourbon Whiskey, 45% Alc./Vol. (90 Proof), 750 mL.
 | `label_front.png` and `label_back.png` together | Front label with no warning, back label with the bottler and the warning. One row in `batch.csv`. | Match | All five items match. Brand, class, alcohol and net contents are found on picture 1, the warning on picture 2. |
 | `label_front.png` alone | Same front label, checked by itself. | Needs review | Four items match. The warning asks for the other side. |
 | `label_back.png` alone | Same back label, checked by itself. | Needs review | The warning matches, and so does the brand, because the bottler line names it. Class, alcohol and net contents ask for the other side. |
+| `label_import.png` | Imported tequila: Casa Solana, Tequila Blanco, 40% Alc./Vol. (80 Proof), 750 mL, "PRODUCT OF MEXICO" at the top and "Imported by Solana Spirits, San Antonio, Texas". The application gives bottler "Solana Spirits, San Antonio, Texas" and country "Mexico". | Match | All seven items match. |
 
 The automated tests in `tests/test_api.py` assert these results. For the
 low-contrast label the test only asserts that nothing is reported as a

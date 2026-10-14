@@ -4,6 +4,8 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const MAX_PICTURES = 6;
 const PARALLEL_REQUESTS = 3;
 const CSV_COLUMNS = ["filename", "brand_name", "class_type", "alcohol_content", "net_contents"];
+/** Application values that may be left out of the form and the CSV list. */
+const OPTIONAL_COLUMNS = ["bottler_name_address", "country_of_origin"];
 const STATUS_WORDS = {
   match: "✓ Match",
   review: "! Needs review",
@@ -350,7 +352,7 @@ singleForm.addEventListener("submit", async (event) => {
   }
 
   const values = { beverage_type: singleForm.elements.beverage_type.value };
-  CSV_COLUMNS.slice(1).forEach((name) => (values[name] = singleForm.elements[name].value.trim()));
+  [...CSV_COLUMNS.slice(1), ...OPTIONAL_COLUMNS].forEach((name) => (values[name] = singleForm.elements[name].value.trim()));
 
   $("single-submit").disabled = true;
   $("single-busy").hidden = false;
@@ -446,7 +448,7 @@ function csvCell(value) {
 }
 
 function resultsCsv() {
-  const fields = ["brand_name", "class_type", "alcohol_content", "net_contents", "government_warning"];
+  const fields = ["brand_name", "class_type", "alcohol_content", "net_contents", "government_warning", ...OPTIONAL_COLUMNS];
   const header = ["filename", "overall", "seconds", "note"];
   fields.forEach((name) => header.push(`${name}_result`, `${name}_on_label`, `${name}_reason`, `${name}_picture`));
   const lines = [header.map(csvCell).join(",")];
@@ -592,7 +594,7 @@ batchForm.addEventListener("submit", async (event) => {
       return;
     }
     const values = { beverage_type: entry.beverage_type || "spirits" };
-    CSV_COLUMNS.slice(1).forEach((name) => (values[name] = entry[name]));
+    [...CSV_COLUMNS.slice(1), ...OPTIONAL_COLUMNS].forEach((name) => (values[name] = entry[name] || ""));
     jobs.push({ files, name: names.join("; "), values });
   });
   images
