@@ -10,6 +10,14 @@ Needs review or Does not match, with a one-line reason.
 It was built for the Treasury (TTB) take-home exercise. Design choices,
 assumptions and limits are in [APPROACH.md](APPROACH.md).
 
+**Live prototype: https://labelcheck.kalibgeiger.com**
+
+To try it, download a few pictures from [samples/](samples/) (for example
+`label_front.png` and `label_back.png` together, or `label_wrong_abv.png`), or
+use "Take a picture" with your own label. The application values for every
+sample are listed in [samples/README.md](samples/README.md), and
+[samples/batch.csv](samples/batch.csv) works with "Check many labels".
+
 - No outside AI or cloud services are called. The OCR models are included in
   the installed packages.
 - Uploaded images are processed in memory and are not saved.
@@ -149,6 +157,14 @@ development machine, which has no Docker installed.
 | `OCR_EXTRA_READ_BUDGET` | `3.0` | Seconds per picture after which no new second look starts. When time runs out, "not found" becomes Needs review instead of a mismatch. |
 
 ## Deployment notes
+
+The live prototype runs on a small shared Ubuntu 24.04 server (2 vCPU, 2 GB
+memory) that also hosts other sites. It runs as its own system user under
+systemd with `OCR_MEMORY_ARENA=0`, a 700 MB memory cap and a CPU quota, behind
+nginx with a Let's Encrypt certificate. The exact files are in
+[deploy/](deploy/): `labelcheck.service` and `nginx-labelcheck.conf`. On that
+server one sample label takes about 2 to 2.6 seconds and a front and back pair
+about 3 seconds, with the app using about 400 MB.
 
 - Run one worker process. Label reads are done one at a time inside the
   process so that a small server stays responsive. More workers each load
