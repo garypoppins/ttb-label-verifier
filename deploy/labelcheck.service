@@ -1,0 +1,25 @@
+# systemd unit for the label checker on a shared Ubuntu host.
+# One worker, bound to localhost behind nginx, with memory and CPU caps so it cannot starve other sites.
+[Unit]
+Description=TTB label verification prototype
+After=network.target
+
+[Service]
+User=labelcheck
+Group=labelcheck
+WorkingDirectory=/srv/labelcheck/app
+Environment=OCR_THREADS=2
+Environment=OCR_MEMORY_ARENA=0
+ExecStart=/srv/labelcheck/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8790 --workers 1 --proxy-headers
+Restart=on-failure
+RestartSec=3
+Nice=5
+MemoryMax=700M
+CPUQuota=150%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
