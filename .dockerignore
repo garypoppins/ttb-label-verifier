@@ -1,0 +1,8 @@
+.venv*/
+.git/
+__pycache__/
+.pytest_cache/
+tests/
+samples/
+*.md
+real_labels/

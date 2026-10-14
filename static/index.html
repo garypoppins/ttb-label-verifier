@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Label Check</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the form</a>
+
+  <header class="site-header">
+    <h1>Label Check</h1>
+    <p>Compare a label picture with what the application says.</p>
+  </header>
+
+  <main id="main">
+    <div class="mode-switch" role="tablist" aria-label="What would you like to do?">
+      <button type="button" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Check one label</button>
+      <button type="button" role="tab" id="tab-batch" aria-controls="panel-batch" aria-selected="false" tabindex="-1">Check many labels</button>
+    </div>
+
+    <!-- One label -->
+    <section id="panel-single" role="tabpanel" aria-labelledby="tab-single">
+      <form id="single-form" novalidate>
+        <div class="step">
+          <h2><span class="step-number">1</span> Add the label pictures</h2>
+          <p class="hint">One picture is enough if it shows everything. If the label has a front and a back, add both.</p>
+          <div class="drop-zone" id="single-drop">
+            <input type="file" id="single-image" accept="image/*" multiple class="visually-hidden">
+            <input type="file" id="single-capture" accept="image/*" capture="environment" class="visually-hidden" tabindex="-1" aria-hidden="true">
+            <div class="picture-buttons">
+              <button type="button" class="button button-secondary" id="camera-open">Take a picture</button>
+              <label for="single-image" class="button button-secondary">Choose a picture</label>
+            </div>
+            <p class="hint">or drag pictures into this box. JPG or PNG, up to 15 MB each, up to 6 pictures.</p>
+            <div class="camera" id="camera-panel" hidden>
+              <video id="camera-video" autoplay playsinline muted aria-label="Live camera view"></video>
+              <p class="hint">Hold the label flat and fill the frame. Avoid glare.</p>
+              <div class="picture-buttons">
+                <button type="button" class="button" id="camera-snap">Add this picture</button>
+                <button type="button" class="button button-secondary" id="camera-cancel">Cancel</button>
+              </div>
+            </div>
+            <p class="file-name" id="single-file-name" aria-live="polite"></p>
+            <ul class="picture-list" id="single-pictures" aria-label="Pictures you added"></ul>
+          </div>
+        </div>
+
+        <div class="step">
+          <h2><span class="step-number">2</span> Type what the application says</h2>
+
+          <fieldset class="choice-row">
+            <legend>Type of drink</legend>
+            <label class="choice"><input type="radio" name="beverage_type" value="spirits" checked> Spirits</label>
+            <label class="choice"><input type="radio" name="beverage_type" value="wine"> Wine</label>
+            <label class="choice"><input type="radio" name="beverage_type" value="beer"> Beer</label>
+          </fieldset>
+
+          <div class="field">
+            <label for="brand_name">Brand name</label>
+            <p class="hint" id="brand-hint">Example: OLD TOM DISTILLERY</p>
+            <input type="text" id="brand_name" name="brand_name" autocomplete="off" aria-describedby="brand-hint">
+          </div>
+          <div class="field">
+            <label for="class_type">Class or type</label>
+            <p class="hint" id="class-hint">Example: Kentucky Straight Bourbon Whiskey</p>
+            <input type="text" id="class_type" name="class_type" autocomplete="off" aria-describedby="class-hint">
+          </div>
+          <div class="field-pair">
+            <div class="field">
+              <label for="alcohol_content">Alcohol content <span id="alcohol-optional" class="optional" hidden>(leave empty if the label does not show it)</span></label>
+              <p class="hint" id="alcohol-hint">Example: 45% Alc./Vol. (90 Proof)</p>
+              <input type="text" id="alcohol_content" name="alcohol_content" autocomplete="off" aria-describedby="alcohol-hint">
+            </div>
+            <div class="field">
+              <label for="net_contents">Net contents</label>
+              <p class="hint" id="net-hint">Example: 750 mL</p>
+              <input type="text" id="net_contents" name="net_contents" autocomplete="off" aria-describedby="net-hint">
+            </div>
+          </div>
+          <p class="hint">The government warning is always checked. You do not need to type it.</p>
+        </div>
+
+        <div class="message message-error" id="single-error" role="alert" hidden></div>
+
+        <div class="actions">
+          <button type="submit" class="button button-primary" id="single-submit">Check this label</button>
+          <button type="button" class="button button-secondary" id="single-reset">Start over</button>
+        </div>
+      </form>
+
+      <div id="single-busy" class="busy" role="status" hidden>Reading the label. This takes a few seconds for each picture.</div>
+      <section id="single-result" aria-live="polite" tabindex="-1" hidden></section>
+    </section>
+
+    <!-- Many labels -->
+    <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" hidden>
+      <form id="batch-form" novalidate>
+        <div class="step">
+          <h2><span class="step-number">1</span> Choose all the label pictures</h2>
+          <div class="drop-zone" id="batch-drop">
+            <input type="file" id="batch-images" accept="image/*" multiple class="visually-hidden">
+            <label for="batch-images" class="button button-secondary">Choose pictures</label>
+            <p class="hint">or drag them into this box. You can pick hundreds at once.</p>
+            <p class="file-name" id="batch-images-name" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="step">
+          <h2><span class="step-number">2</span> Choose the list of application details</h2>
+          <p>This is a spreadsheet saved as a CSV file, with one row for each label.
+            <a href="/api/batch-template.csv" download>Download a blank list to fill in</a>.</p>
+          <div class="drop-zone" id="batch-csv-drop">
+            <input type="file" id="batch-csv" accept=".csv,text/csv" class="visually-hidden">
+            <label for="batch-csv" class="button button-secondary">Choose the list (CSV)</label>
+            <p class="hint">Columns: filename, brand_name, class_type, alcohol_content, net_contents, beverage_type (optional).</p>
+            <p class="hint">If one label has several pictures, put them all in the filename column with a semicolon between them, like front.jpg;back.jpg.</p>
+            <p class="file-name" id="batch-csv-name" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="message message-error" id="batch-error" role="alert" hidden></div>
+
+        <div class="actions">
+          <button type="submit" class="button button-primary" id="batch-submit">Check all labels</button>
+          <button type="button" class="button button-secondary" id="batch-stop" hidden>Stop</button>
+        </div>
+      </form>
+
+      <div id="batch-progress" hidden>
+        <label for="batch-bar" id="batch-progress-text">Starting</label>
+        <progress id="batch-bar" value="0" max="1"></progress>
+      </div>
+
+      <section id="batch-result" aria-live="polite" hidden>
+        <div class="summary" id="batch-summary"></div>
+        <div class="actions">
+          <button type="button" class="button button-primary" id="batch-download">Download results (CSV)</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Picture</th><th scope="col">Brand name</th><th scope="col">Result</th><th scope="col">Details</th></tr>
+            </thead>
+            <tbody id="batch-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>Prototype. Pictures are read on this server, are not sent anywhere else, and are not saved.
+      This tool helps with matching. The agent makes the decision.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
